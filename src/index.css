@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --primary-color: #1b365d;
+    --primary-hover: #142846;
+    --primary-light: #e8eef6;
+    --accent-metallic: #d4af37;
+    --accent-metallic-light: #fbf5e6;
+    --sidebar-dark-bg: #0d1b2a;
+    --sidebar-dark-hover: #1b2a3c;
+    --sidebar-dark-active: #22374e;
+  }
+
+  body {
+    font-family: 'Cairo', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Internal Logo Animation Keyframes */
+@keyframes logo-shimmer-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-25deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.75;
+  }
+  45% {
+    opacity: 0.9;
+  }
+  60% {
+    transform: translateX(180%) skewX(-25deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(180%) skewX(-25deg);
+    opacity: 0;
+  }
+}
+
+@keyframes logo-gentle-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.02);
+  }
+}
+
+@keyframes logo-crimson-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4), 0 4px 12px -2px rgba(220, 38, 38, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.7), 0 6px 20px 2px rgba(212, 175, 55, 0.5);
+  }
+}
+
+@keyframes logo-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes logo-radar-sweep {
+  0% {
+    top: -10%;
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.8;
+  }
+  70% {
+    opacity: 0.8;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+@keyframes logo-hydraulic-tilt {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-2deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+.animate-logo-shimmer {
+  animation: logo-shimmer-sweep 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-logo-float {
+  animation: logo-gentle-float 4s ease-in-out infinite;
+}
+
+.animate-logo-pulse {
+  animation: logo-crimson-pulse 3s ease-in-out infinite;
+}
+
+.animate-logo-spin-slow {
+  animation: logo-ring-spin 18s linear infinite;
+}
+
+.animate-logo-radar {
+  animation: logo-radar-sweep 2.8s ease-in-out infinite;
+}
+
+.animate-logo-tilt {
+  animation: logo-hydraulic-tilt 6s ease-in-out infinite;
+}
+
+/* Print Styles for Financial Statements & Audit Reports */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide app chrome during printing */
+  nav,
+  aside,
+  header,
+  .no-print,
+  button:not(.allow-print),
+  input[type="checkbox"],
+  select,
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* Make statement fill page */
+  .printable-financial-statement {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+
+  .print-page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .print-break-inside-avoid {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Preserve table borders and colors */
+  table, tr, td, th {
+    border-color: #cbd5e1 !important;
+  }
+}
+
+

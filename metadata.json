@@ -1,0 +1,8 @@
+{
+  "name": "Remix Cranes Fleet Management  C-Style ERP-System v1.",
+  "description": "نظام Cranes Fleet Management  C-Style ERP-System v1.باللغة العربية أولاً (RTL)، مع شريط جانبي مزدوج، تقويم هجري وميلادي، تفقيط مالي ثنائي، وترجمة وتخصيص فوري.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
