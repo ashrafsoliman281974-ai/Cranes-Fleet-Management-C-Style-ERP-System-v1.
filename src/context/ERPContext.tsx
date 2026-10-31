@@ -40,7 +40,28 @@ import {
   CraneMaintenanceEvent,
   MechanicTechnicianItem,
   MaintenanceStatus,
+  LeadBookingRequest,
+  AuditLogEntry,
+  ChequeBatch,
+  ChequeBatchItem,
+  ChequeBatchAllocation,
+  ChequeSettings,
+  ChequeBook,
+  ChequeLifecycleState,
+  ChequeStatusLog,
+  WhatsAppTemplate,
+  WhatsAppConversationMessage,
 } from '../types/erp';
+import {
+  INITIAL_LEAD_BOOKINGS,
+  INITIAL_AUDIT_LOGS,
+  INITIAL_CHEQUE_SETTINGS,
+  INITIAL_CHEQUE_BOOKS,
+  INITIAL_CHEQUE_BATCHES,
+  INITIAL_WHATSAPP_TEMPLATES,
+  INITIAL_WHATSAPP_CONVERSATIONS,
+} from '../data/masterEnterpriseSeed';
+import { eventDispatcher } from '../utils/eventDispatcher';
 import {
   INITIAL_EQUIPMENT_COSTING,
   INITIAL_BUDGETS,
@@ -276,6 +297,53 @@ interface ERPContextType {
   deleteMaintenanceEvent: (id: string) => boolean;
   updateMaintenanceStatus: (id: string, status: MaintenanceStatus, notes?: string) => void;
   saveMechanic: (mechanic: MechanicTechnicianItem) => void;
+
+  // Website Leads & Booking Requests
+  leadBookings: LeadBookingRequest[];
+  setLeadBookings: React.Dispatch<React.SetStateAction<LeadBookingRequest[]>>;
+
+  // Audit Trail & Compliance Tracking
+  auditLogs: AuditLogEntry[];
+  setAuditLogs: React.Dispatch<React.SetStateAction<AuditLogEntry[]>>;
+  logAuditEvent: (entry: Omit<AuditLogEntry, 'id' | 'timestamp' | 'hijriDate'>) => AuditLogEntry;
+  clearAuditLogs: () => void;
+
+  // Multi-Cheque Management Module A
+  chequeSettings: ChequeSettings;
+  setChequeSettings: React.Dispatch<React.SetStateAction<ChequeSettings>>;
+  chequeBatches: ChequeBatch[];
+  setChequeBatches: React.Dispatch<React.SetStateAction<ChequeBatch[]>>;
+  chequeBooks: ChequeBook[];
+  setChequeBooks: React.Dispatch<React.SetStateAction<ChequeBook[]>>;
+  saveChequeBatch: (batch: ChequeBatch) => ChequeBatch;
+  transitionChequeLifecycle: (
+    batchId: string,
+    chequeId: string,
+    newStatus: ChequeLifecycleState,
+    opts?: {
+      reason?: string;
+      depositDate?: string;
+      bankCharges?: number;
+      penaltyAmount?: number;
+      replacementChequeNo?: string;
+      endorsedToSupplier?: string;
+    }
+  ) => boolean;
+  checkClientBouncedCheques: (clientNameAr: string) => ChequeBatchItem[];
+
+  // WhatsApp Integration Module B
+  whatsAppTemplates: WhatsAppTemplate[];
+  setWhatsAppTemplates: React.Dispatch<React.SetStateAction<WhatsAppTemplate[]>>;
+  whatsAppConversations: WhatsAppConversationMessage[];
+  sendWhatsAppMessage: (msg: {
+    recipientPhone: string;
+    recipientName: string;
+    messageText: string;
+    templateId?: string;
+    relatedDocType?: string;
+    relatedDocNo?: string;
+    signedPortalLink?: string;
+  }) => boolean;
 }
 
 const ERPContext = createContext<ERPContextType | undefined>(undefined);
@@ -286,6 +354,569 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeView, setActiveView] = useState<string>('workspace');
   const [language, setLanguageState] = useState<'ar' | 'en'>('ar');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+
+  // Website Leads & Rental Requests
+  const [leadBookings, setLeadBookings] = useState<LeadBookingRequest[]>(() => {
+    const saved = localStorage.getItem('cranes_lead_bookings');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return INITIAL_LEAD_BOOKINGS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cranes_lead_bookings', JSON.stringify(leadBookings));
+  }, [leadBookings]);
+
+  // Audit Trail & Compliance Tracking State
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() => {
+    const saved = localStorage.getItem('cranes_audit_logs');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return INITIAL_AUDIT_LOGS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cranes_audit_logs', JSON.stringify(auditLogs));
+  }, [auditLogs]);
+
+  const logAuditEvent = (entry: Omit<AuditLogEntry, 'id' | 'timestamp' | 'hijriDate'>): AuditLogEntry => {
+    const now = new Date();
+    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const hijri = gregorianToHijri(now);
+    const newEntry: AuditLogEntry = {
+      ...entry,
+      id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      timestamp,
+      hijriDate: hijri.formattedAr,
+    };
+    setAuditLogs((prev) => [newEntry, ...prev]);
+    return newEntry;
+  };
+
+  const clearAuditLogs = () => {
+    setAuditLogs([]);
+  };
+
+  // Multi-Cheque Management State
+  const [chequeSettings, setChequeSettings] = useState<ChequeSettings>(() => {
+    const saved = localStorage.getItem('cranes_cheque_settings');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return INITIAL_CHEQUE_SETTINGS;
+  });
+
+  const [chequeBatches, setChequeBatches] = useState<ChequeBatch[]>(() => {
+    const saved = localStorage.getItem('cranes_cheque_batches');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return INITIAL_CHEQUE_BATCHES;
+  });
+
+  const [chequeBooks, setChequeBooks] = useState<ChequeBook[]>(() => {
+    const saved = localStorage.getItem('cranes_cheque_books');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return INITIAL_CHEQUE_BOOKS;
+  });
+
+  const [whatsAppTemplates, setWhatsAppTemplates] = useState<WhatsAppTemplate[]>(() => {
+    const saved = localStorage.getItem('cranes_wa_templates');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return INITIAL_WHATSAPP_TEMPLATES;
+  });
+
+  const [whatsAppConversations, setWhatsAppConversations] = useState<WhatsAppConversationMessage[]>(() => {
+    const saved = localStorage.getItem('cranes_wa_conversations');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return INITIAL_WHATSAPP_CONVERSATIONS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cranes_cheque_settings', JSON.stringify(chequeSettings));
+  }, [chequeSettings]);
+
+  useEffect(() => {
+    localStorage.setItem('cranes_cheque_batches', JSON.stringify(chequeBatches));
+  }, [chequeBatches]);
+
+  useEffect(() => {
+    localStorage.setItem('cranes_cheque_books', JSON.stringify(chequeBooks));
+  }, [chequeBooks]);
+
+  useEffect(() => {
+    localStorage.setItem('cranes_wa_templates', JSON.stringify(whatsAppTemplates));
+  }, [whatsAppTemplates]);
+
+  useEffect(() => {
+    localStorage.setItem('cranes_wa_conversations', JSON.stringify(whatsAppConversations));
+  }, [whatsAppConversations]);
+
+  // Save / Submit Cheque Batch
+  const saveChequeBatch = (batch: ChequeBatch): ChequeBatch => {
+    let savedBatch = { ...batch };
+    if (!savedBatch.id) {
+      savedBatch.id = `batch-${Date.now()}`;
+    }
+    if (!savedBatch.batchNo) {
+      savedBatch.batchNo = `CHQ-BCH-2026-${Math.floor(100 + Math.random() * 900)}`;
+    }
+
+    // Auto-generate standard double-entry journal entry if submitted
+    if (savedBatch.status === 'معتمدة ومرحلة' && !savedBatch.linkedJournalEntryNo) {
+      const jvNo = `JV-2026-CHQ-${Math.floor(1000 + Math.random() * 9000)}`;
+      savedBatch.linkedJournalEntryNo = jvNo;
+
+      const newJv: JournalEntry = {
+        id: `jv-${Date.now()}`,
+        entryNo: jvNo,
+        postingDate: savedBatch.postingDate,
+        hijriPostingDate: savedBatch.hijriPostingDate || '19 ربيع الآخر 1448',
+        entryType: savedBatch.direction.includes('Receive') ? 'سند قبض شيكات مجمعة' : 'سند صرف شيكات موردين',
+        currency: 'EGP',
+        status: 'معتمد ومرحل',
+        remarksAr: `إثبات استلام دفعة شيكات رقم ${savedBatch.batchNo} بعدد ${savedBatch.cheques.length} شيك وتسويتها على حسابات العملاء بنظام FIFO.`,
+        costCenterAr: savedBatch.costCenterAr || 'إدارة العمليات والتشغيل الميداني',
+        totalDebit: savedBatch.totalChequesAmount,
+        totalCredit: savedBatch.totalChequesAmount,
+        difference: 0,
+        amountInWordsAr: tafqeetArabic(savedBatch.totalChequesAmount, 'EGP'),
+        amountInWordsEn: tafqeetEnglish(savedBatch.totalChequesAmount, 'EGP'),
+        createdByUserId: currentUser.id,
+        createdByUserNameAr: currentUser.nameAr,
+        approvedByUserId: currentUser.id,
+        approvedByUserNameAr: currentUser.nameAr,
+        approvedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        lines: [
+          {
+            id: `jvl-1-${Date.now()}`,
+            accountAr: chequeSettings.chequesInHandAccount,
+            accountEn: '1103 - Cheques in Hand (PDC Assets)',
+            debit: savedBatch.totalChequesAmount,
+            credit: 0,
+            lineRemark: `شيكات حافظة ${savedBatch.batchNo}`,
+          },
+          {
+            id: `jvl-2-${Date.now()}`,
+            accountAr: '1110 - حسابات العملاء والمدينين (AR)',
+            accountEn: '1110 - Accounts Receivable',
+            debit: 0,
+            credit: savedBatch.totalChequesAmount,
+            lineRemark: `تسوية فواتير دفعة ${savedBatch.batchNo} بنظام FIFO`,
+          },
+        ],
+      };
+      setJournalEntries((prev) => [newJv, ...prev]);
+
+      // Publish cheque.received event to Event Dispatcher
+      eventDispatcher.publish(
+        'cheque.received',
+        'Multi-Cheque Management',
+        'Cheque Batch',
+        savedBatch.id,
+        savedBatch.batchNo,
+        {
+          chequeCount: savedBatch.cheques.length,
+          totalAmount: savedBatch.totalChequesAmount,
+          allocatedAmount: savedBatch.totalAllocatedAmount,
+          unallocatedAdvance: savedBatch.unallocatedAdvanceAmount,
+          chequeList: savedBatch.cheques.map((c) => ({ no: c.chequeNo, amount: c.amount, due: c.dueDate })),
+        },
+        {
+          partyNameAr: savedBatch.cheques[0]?.partyNameAr,
+          amount: savedBatch.totalChequesAmount,
+          currency: 'EGP',
+        }
+      );
+
+      // Audit Trail
+      logAuditEvent({
+        userId: currentUser.id,
+        userNameAr: currentUser.nameAr,
+        userRoleAr: currentUser.roleAr,
+        userIpAddress: '192.168.1.104',
+        userDevice: 'Cranes C-Style Desktop Console',
+        actionType: 'اعتماد',
+        moduleNameAr: 'الشيكات والخزينة',
+        docType: 'Cheque Batch',
+        docId: savedBatch.id,
+        docNumber: savedBatch.batchNo,
+        summaryAr: `اعتماد وترحيل دفعة شيكات رقم ${savedBatch.batchNo} بإجمالي ${savedBatch.totalChequesAmount.toLocaleString()} ج.م وتوليد القيد المحاسبي ${jvNo}`,
+        severity: 'حرج (Critical)',
+        complianceCategory: 'حوكمة مالية (SOX / IFRS)',
+        status: 'نجاح',
+        fieldChanges: [
+          { fieldNameAr: 'حالة الدفعة', fieldNameEn: 'status', oldValue: 'مسودة', newValue: 'معتمدة ومرحلة' },
+          { fieldNameAr: 'القيد المحاسبي المرتبط', fieldNameEn: 'linkedJournalEntryNo', oldValue: 'لا يوجد', newValue: jvNo },
+        ],
+        metadata: {
+          totalCheques: savedBatch.cheques.length,
+          totalAmount: savedBatch.totalChequesAmount,
+          allocated: savedBatch.totalAllocatedAmount,
+        },
+      });
+    }
+
+    setChequeBatches((prev) => {
+      const idx = prev.findIndex((b) => b.id === savedBatch.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = savedBatch;
+        return updated;
+      }
+      return [savedBatch, ...prev];
+    });
+
+    return savedBatch;
+  };
+
+  // Transition Cheque Lifecycle
+  const transitionChequeLifecycle = (
+    batchId: string,
+    chequeId: string,
+    newStatus: ChequeLifecycleState,
+    opts: {
+      reason?: string;
+      depositDate?: string;
+      bankCharges?: number;
+      penaltyAmount?: number;
+      replacementChequeNo?: string;
+      endorsedToSupplier?: string;
+    } = {}
+  ): boolean => {
+    const targetBatch = chequeBatches.find((b) => b.id === batchId);
+    const targetCheque = targetBatch?.cheques.find((c) => c.id === chequeId);
+    const oldStatus: ChequeLifecycleState = targetCheque ? targetCheque.status : 'Received';
+
+    const updatedBatches = chequeBatches.map((batch) => {
+      if (batch.id !== batchId) return batch;
+
+      const updatedCheques = batch.cheques.map((c) => {
+        if (c.id !== chequeId) return c;
+
+        const now = new Date();
+        const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+        const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+        const newLogEntry: ChequeStatusLog = {
+          id: `log-${Date.now()}`,
+          chequeId: c.id,
+          fromStatus: c.status,
+          toStatus: newStatus,
+          user: currentUser.nameAr,
+          timestamp,
+          reason: opts.reason || `تحديث حالة الشيك إلى ${newStatus}`,
+        };
+
+        return {
+          ...c,
+          status: newStatus,
+          depositDate: opts.depositDate || c.depositDate,
+          collectionDate: newStatus === 'Collected' ? timestamp.slice(0, 10) : c.collectionDate,
+          bounceDate: newStatus === 'Returned' ? timestamp.slice(0, 10) : c.bounceDate,
+          bounceReason: opts.reason || c.bounceReason,
+          bankCharges: opts.bankCharges ?? c.bankCharges,
+          penaltyAmount: opts.penaltyAmount ?? c.penaltyAmount,
+          replacementChequeNo: opts.replacementChequeNo || c.replacementChequeNo,
+          endorsedToSupplierAr: opts.endorsedToSupplier || c.endorsedToSupplierAr,
+          statusLogs: [...(c.statusLogs || []), newLogEntry],
+        };
+      });
+
+      return {
+        ...batch,
+        cheques: updatedCheques,
+      };
+    });
+
+    setChequeBatches(updatedBatches);
+
+    if (targetCheque) {
+      if (newStatus === 'Under Collection') {
+        const jvNo = `JV-2026-DEP-${targetCheque.chequeNo}`;
+        const newJv: JournalEntry = {
+          id: `jv-dep-${Date.now()}`,
+          entryNo: jvNo,
+          postingDate: opts.depositDate || new Date().toISOString().slice(0, 10),
+          hijriPostingDate: '19 ربيع الآخر 1448',
+          entryType: 'إيداع شيك تحت التحصيل',
+          currency: 'EGP',
+          status: 'معتمد ومرحل',
+          remarksAr: `إيداع الشيك رقم ${targetCheque.chequeNo} المسحوب على ${targetCheque.drawerBankAr} بالبنك تحت التحصيل.`,
+          costCenterAr: 'إدارة العمليات والتشغيل الميداني',
+          totalDebit: targetCheque.amount,
+          totalCredit: targetCheque.amount,
+          difference: 0,
+          amountInWordsAr: tafqeetArabic(targetCheque.amount, 'EGP'),
+          amountInWordsEn: tafqeetEnglish(targetCheque.amount, 'EGP'),
+          createdByUserId: currentUser.id,
+          createdByUserNameAr: currentUser.nameAr,
+          approvedByUserId: currentUser.id,
+          approvedByUserNameAr: currentUser.nameAr,
+          approvedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+          lines: [
+            {
+              id: `jvl-dep-1-${Date.now()}`,
+              accountAr: chequeSettings.chequesUnderCollectionAccount,
+              accountEn: '1104 - Cheques Under Collection',
+              debit: targetCheque.amount,
+              credit: 0,
+              lineRemark: `إيداع شيك ${targetCheque.chequeNo}`,
+            },
+            {
+              id: `jvl-dep-2-${Date.now()}`,
+              accountAr: chequeSettings.chequesInHandAccount,
+              accountEn: '1103 - Cheques in Hand',
+              debit: 0,
+              credit: targetCheque.amount,
+              lineRemark: `صرف من الخزينة للإيداع البنكي`,
+            },
+          ],
+        };
+        setJournalEntries((prev) => [newJv, ...prev]);
+
+        eventDispatcher.publish(
+          'cheque.deposited',
+          'Multi-Cheque Management',
+          'Cheque',
+          chequeId,
+          targetCheque.chequeNo,
+          { amount: targetCheque.amount, bank: targetCheque.drawerBankAr, depositDate: opts.depositDate },
+          { partyNameAr: targetCheque.partyNameAr, amount: targetCheque.amount }
+        );
+      } else if (newStatus === 'Collected') {
+        const jvNo = `JV-2026-COL-${targetCheque.chequeNo}`;
+        const newJv: JournalEntry = {
+          id: `jv-col-${Date.now()}`,
+          entryNo: jvNo,
+          postingDate: new Date().toISOString().slice(0, 10),
+          hijriPostingDate: '19 ربيع الآخر 1448',
+          entryType: 'تحصيل شيك بنكي',
+          currency: 'EGP',
+          status: 'معتمد ومرحل',
+          remarksAr: `تحصيل وإضافة الشيك رقم ${targetCheque.chequeNo} فعلياً إلى كشف حساب البنك وإقفال شيكات تحت التحصيل.`,
+          costCenterAr: 'إدارة العمليات والتشغيل الميداني',
+          totalDebit: targetCheque.amount,
+          totalCredit: targetCheque.amount,
+          difference: 0,
+          amountInWordsAr: tafqeetArabic(targetCheque.amount, 'EGP'),
+          amountInWordsEn: tafqeetEnglish(targetCheque.amount, 'EGP'),
+          createdByUserId: currentUser.id,
+          createdByUserNameAr: currentUser.nameAr,
+          approvedByUserId: currentUser.id,
+          approvedByUserNameAr: currentUser.nameAr,
+          approvedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+          lines: [
+            {
+              id: `jvl-col-1-${Date.now()}`,
+              accountAr: '1112 - البنك التجاري الدولي CIB (حساب جاري)',
+              accountEn: '1112 - CIB Bank Current Account',
+              debit: targetCheque.amount,
+              credit: 0,
+              lineRemark: `إضافة تحصيل شيك ${targetCheque.chequeNo}`,
+            },
+            {
+              id: `jvl-col-2-${Date.now()}`,
+              accountAr: chequeSettings.chequesUnderCollectionAccount,
+              accountEn: '1104 - Cheques Under Collection',
+              debit: 0,
+              credit: targetCheque.amount,
+              lineRemark: `إقفال شيكات تحت التحصيل`,
+            },
+          ],
+        };
+        setJournalEntries((prev) => [newJv, ...prev]);
+
+        eventDispatcher.publish(
+          'cheque.collected',
+          'Multi-Cheque Management',
+          'Cheque',
+          chequeId,
+          targetCheque.chequeNo,
+          { amount: targetCheque.amount, bank: targetCheque.drawerBankAr },
+          { partyNameAr: targetCheque.partyNameAr, amount: targetCheque.amount }
+        );
+      } else if (newStatus === 'Returned') {
+        const jvNo = `JV-2026-RTN-${targetCheque.chequeNo}`;
+        const newJv: JournalEntry = {
+          id: `jv-rtn-${Date.now()}`,
+          entryNo: jvNo,
+          postingDate: new Date().toISOString().slice(0, 10),
+          hijriPostingDate: '19 ربيع الآخر 1448',
+          entryType: 'قيد عكسي لارتداد شيك بنكي',
+          currency: 'EGP',
+          status: 'معتمد ومرحل',
+          remarksAr: `إثبات ارتداد الشيك رقم ${targetCheque.chequeNo} لسبب (${opts.reason || 'عدم كفاية الرصيد'}) وإعادة المديونية لحساب العميل.`,
+          costCenterAr: 'إدارة العمليات والتشغيل الميداني',
+          totalDebit: targetCheque.amount,
+          totalCredit: targetCheque.amount,
+          difference: 0,
+          amountInWordsAr: tafqeetArabic(targetCheque.amount, 'EGP'),
+          amountInWordsEn: tafqeetEnglish(targetCheque.amount, 'EGP'),
+          createdByUserId: currentUser.id,
+          createdByUserNameAr: currentUser.nameAr,
+          approvedByUserId: currentUser.id,
+          approvedByUserNameAr: currentUser.nameAr,
+          approvedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+          lines: [
+            {
+              id: `jvl-rtn-1-${Date.now()}`,
+              accountAr: '1110 - حسابات العملاء والمدينين (AR)',
+              accountEn: '1110 - Accounts Receivable',
+              debit: targetCheque.amount,
+              credit: 0,
+              lineRemark: `إعادة مديونية شيك مرتد ${targetCheque.chequeNo}`,
+            },
+            {
+              id: `jvl-rtn-2-${Date.now()}`,
+              accountAr: oldStatus === 'Under Collection' ? chequeSettings.chequesUnderCollectionAccount : chequeSettings.chequesInHandAccount,
+              accountEn: 'Cheques PDC Account',
+              debit: 0,
+              credit: targetCheque.amount,
+              lineRemark: `إلغاء أثر الشيك لارتداده`,
+            },
+          ],
+        };
+        setJournalEntries((prev) => [newJv, ...prev]);
+
+        eventDispatcher.publish(
+          'cheque.returned',
+          'Multi-Cheque Management',
+          'Cheque',
+          chequeId,
+          targetCheque.chequeNo,
+          { amount: targetCheque.amount, reason: opts.reason, bank: targetCheque.drawerBankAr },
+          { partyNameAr: targetCheque.partyNameAr, amount: targetCheque.amount }
+        );
+      }
+
+      // Audit Trail
+      logAuditEvent({
+        userId: currentUser.id,
+        userNameAr: currentUser.nameAr,
+        userRoleAr: currentUser.roleAr,
+        userIpAddress: '192.168.1.104',
+        userDevice: 'Cranes C-Style Desktop Console',
+        actionType: 'تعديل',
+        moduleNameAr: 'الشيكات والخزينة',
+        docType: 'Cheque',
+        docId: chequeId,
+        docNumber: targetCheque.chequeNo,
+        summaryAr: `تغيير حالة الشيك ${targetCheque.chequeNo} من ${oldStatus} إلى ${newStatus} (السبب: ${opts.reason || 'إجراء دورة حياة معتمد'})`,
+        severity: newStatus === 'Returned' ? 'حرج (Critical)' : 'عادي (Info)',
+        complianceCategory: 'حوكمة مالية (SOX / IFRS)',
+        status: 'نجاح',
+        fieldChanges: [
+          { fieldNameAr: 'حالة الشيك', fieldNameEn: 'status', oldValue: oldStatus, newValue: newStatus },
+          { fieldNameAr: 'السبب / الملاحظات', fieldNameEn: 'reason', oldValue: 'ساري', newValue: opts.reason || newStatus },
+        ],
+        metadata: {
+          party: targetCheque.partyNameAr,
+          amount: targetCheque.amount,
+          bank: targetCheque.drawerBankAr,
+        },
+      });
+    }
+
+    return true;
+  };
+
+  // Check client risk for previous bounced cheques
+  const checkClientBouncedCheques = (clientNameAr: string): ChequeBatchItem[] => {
+    const list: ChequeBatchItem[] = [];
+    chequeBatches.forEach((batch) => {
+      batch.cheques.forEach((chq) => {
+        if (chq.partyNameAr.includes(clientNameAr) && chq.status === 'Returned') {
+          list.push(chq);
+        }
+      });
+    });
+    return list;
+  };
+
+  // Send WhatsApp Message with normalizer and logging
+  const sendWhatsAppMessage = (msg: {
+    recipientPhone: string;
+    recipientName: string;
+    messageText: string;
+    templateId?: string;
+    relatedDocType?: string;
+    relatedDocNo?: string;
+    signedPortalLink?: string;
+  }): boolean => {
+    let normalized = msg.recipientPhone.replace(/[\s-]/g, '');
+    if (normalized.startsWith('01')) {
+      normalized = '+20' + normalized.slice(1);
+    } else if (!normalized.startsWith('+')) {
+      normalized = '+20' + normalized;
+    }
+
+    const now = new Date();
+    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+    const newConversation: WhatsAppConversationMessage = {
+      id: `wamsg-${Date.now()}`,
+      direction: 'صادر (Outbound)',
+      sender: '+20 100 818 1125',
+      recipient: normalized,
+      text: msg.messageText,
+      timestamp,
+      status: 'سُلِّمت',
+      isTemplate: !!msg.templateId,
+      relatedDocType: msg.relatedDocType,
+      relatedDocNo: msg.relatedDocNo,
+      signedPortalLink: msg.signedPortalLink,
+    };
+
+    setWhatsAppConversations((prev) => [newConversation, ...prev]);
+
+    logAuditEvent({
+      userId: currentUser.id,
+      userNameAr: currentUser.nameAr,
+      userRoleAr: currentUser.roleAr,
+      userIpAddress: '192.168.1.104',
+      userDevice: 'Meta WhatsApp Cloud Adapter',
+      actionType: 'إنشاء',
+      moduleNameAr: 'محرك الرسائل وواتساب',
+      docType: 'WhatsApp Message',
+      docId: newConversation.id,
+      docNumber: msg.relatedDocNo || 'WA-MSG-DIRECT',
+      summaryAr: `إرسال رسالة واتساب إلى ${msg.recipientName} (${normalized}) بنجاح`,
+      severity: 'عادي (Info)',
+      complianceCategory: 'أمان وسريّة البيانات',
+      status: 'نجاح',
+      metadata: {
+        recipientPhone: normalized,
+        templateId: msg.templateId || 'Direct Text',
+      },
+    });
+
+    return true;
+  };
 
   // Theme
   const [currentTheme, setCurrentTheme] = useState<ThemeConfig>(() => {
@@ -2215,6 +2846,29 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteMaintenanceEvent,
         updateMaintenanceStatus,
         saveMechanic,
+        // Website Leads
+        leadBookings,
+        setLeadBookings,
+        // Audit Trail & Compliance Tracking
+        auditLogs,
+        setAuditLogs,
+        logAuditEvent,
+        clearAuditLogs,
+        // Multi-Cheque Management Module A
+        chequeSettings,
+        setChequeSettings,
+        chequeBatches,
+        setChequeBatches,
+        chequeBooks,
+        setChequeBooks,
+        saveChequeBatch,
+        transitionChequeLifecycle,
+        checkClientBouncedCheques,
+        // WhatsApp Integration Module B
+        whatsAppTemplates,
+        setWhatsAppTemplates,
+        whatsAppConversations,
+        sendWhatsAppMessage,
       }}
     >
       {children}

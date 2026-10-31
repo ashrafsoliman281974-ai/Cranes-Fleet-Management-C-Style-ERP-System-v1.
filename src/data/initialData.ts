@@ -1015,16 +1015,18 @@ export const INITIAL_TRANSLATIONS: TranslationItem[] = [
 ];
 
 export const INITIAL_SHORTCUTS: WorkspaceShortcut[] = [
+  { id: 'sc-landing', titleAr: 'الموقع وصفحة الهبوط C-Style', titleEn: 'Public Landing Page', icon: 'Globe', linkTo: 'landing-preview', color: 'indigo' },
   { id: 'sc-fleet', titleAr: 'أسطول Egypt Cranes', titleEn: 'Cranes Fleet', icon: 'Truck', linkTo: 'fleet', color: 'red' },
   { id: 'sc-maintenance', titleAr: 'متابعة صيانة الأسطول', titleEn: 'Fleet Maintenance', icon: 'Wrench', linkTo: 'fleet-maintenance', count: 2, color: 'amber' },
+  { id: 'sc-multi-cheques', titleAr: 'الشيكات المجمعة والـ FIFO', titleEn: 'Multi-Cheque Batches', icon: 'Landmark', linkTo: 'multi-cheques', count: 3, color: 'emerald' },
+  { id: 'sc-banking', titleAr: 'مطابقة البنوك وخطابات الضمان', titleEn: 'Bank Reconciliation & LGs', icon: 'Scale', linkTo: 'banking-reconciliation', count: 2, color: 'teal' },
+  { id: 'sc-biometrics', titleAr: 'بصمة ADMS والحضور الحي', titleEn: 'Biometric Live Attendance', icon: 'Activity', linkTo: 'biometric-attendance', count: 4, color: 'blue' },
+  { id: 'sc-payroll', titleAr: 'مسير رواتب الأوناش والتأمينات', titleEn: 'Payroll & Cost Centers', icon: 'Calculator', linkTo: 'payroll-calculation', color: 'purple' },
   { id: 'sc-gate', titleAr: 'بوابة الأوناش والتشغيل', titleEn: 'Gate & Daily Ops', icon: 'Activity', linkTo: 'gate-ops', count: 5, color: 'blue' },
   { id: 'sc-contracts', titleAr: 'عقود التشغيل والتأجير', titleEn: 'Crane Contracts', icon: 'FileSignature', linkTo: 'contracts', color: 'emerald' },
-  { id: 'sc-treasury', titleAr: 'الخزينة والشيكات (QR)', titleEn: 'Treasury & Cheques', icon: 'Landmark', linkTo: 'treasury', color: 'emerald' },
-  { id: 'sc-inventory', titleAr: 'المخازن وكروت الأصناف', titleEn: 'Warehouses & Stock', icon: 'Package', linkTo: 'inventory', color: 'amber' },
-  { id: 'sc-jv', titleAr: 'قيد يومية محاسبي (+)', titleEn: 'New Journal Entry', icon: 'BookOpen', linkTo: 'new-jv', color: 'indigo' },
-  { id: 'sc-cc', titleAr: 'شجرة مراكز التكلفة', titleEn: 'Cost Centers Tree', icon: 'Target', linkTo: 'cost-centers', color: 'amber' },
-  { id: 'sc-users', titleAr: 'إدارة المستخدمين', titleEn: 'User Management', icon: 'Users', linkTo: 'users', color: 'purple' },
-  { id: 'sc-backup', titleAr: 'النسخ الاحتياطي للنظام', titleEn: 'Backup & Restore', icon: 'Database', linkTo: 'backup', color: 'slate' },
+  { id: 'sc-itrack', titleAr: 'تكامل i-Track GPS وساعات المحرك', titleEn: 'i-Track GPS Hours', icon: 'Target', linkTo: 'itrack-gps', color: 'amber' },
+  { id: 'sc-audit', titleAr: 'سجل التدقيق والامتثال (Audit Trail)', titleEn: 'Audit Trail & Compliance', icon: 'ShieldCheck', linkTo: 'audit-trail', color: 'red' },
+  { id: 'sc-status', titleAr: 'لوحة حالة التكاملات والأنظمة', titleEn: 'Integration Health Status', icon: 'ShieldCheck', linkTo: 'integration-status', color: 'slate' },
 ];
 
 export const INITIAL_FOLDERS: WorkspaceFolder[] = [
@@ -1037,6 +1039,46 @@ export const INITIAL_FOLDERS: WorkspaceFolder[] = [
       { id: 'it-pl', titleAr: 'قائمة الأرباح والخسائر (Profit & Loss)', titleEn: 'Income Statement', type: 'report', route: 'financial-statements' },
       { id: 'it-cf', titleAr: 'قائمة التدفقات النقدية (Cash Flows)', titleEn: 'Cash Flow Statement', type: 'report', route: 'financial-statements' },
       { id: 'it-gl', titleAr: 'دفتر الأستاذ العام (General Ledger)', titleEn: 'General Ledger', type: 'report', route: 'ledger' },
+    ],
+  },
+  {
+    id: 'f-hr-payroll',
+    titleAr: 'الموارد البشرية والبصمة الحية والرواتب',
+    titleEn: 'Biometric HR, Attendance & Payroll',
+    items: [
+      { id: 'it-biometric', titleAr: 'حضور بصمة ADMS Push ولقطات ATTPHOTO', titleEn: 'ADMS Biometrics & Photos', type: 'page', route: 'biometric-attendance' },
+      { id: 'it-payroll', titleAr: 'مسير الرواتب وحصص مراكز تكلفة الأوناش', titleEn: 'Payroll & Cost Centers Distribution', type: 'page', route: 'payroll-calculation' },
+      { id: 'it-emp-portal', titleAr: 'بوابة الموظف الذاتية (سجل البصمة وقسائم الراتب)', titleEn: 'Employee Self-Service Portal', type: 'page', route: 'employee-portal' },
+    ],
+  },
+  {
+    id: 'f-banking-finance',
+    titleAr: 'الشيكات المجمعة والبنوك والضمانات',
+    titleEn: 'Multi-Cheques, Banks & Guarantees',
+    items: [
+      { id: 'it-multi-cheques', titleAr: 'إدارة الشيكات المجمعة والتوزيع الآلي FIFO', titleEn: 'Multi-Cheque Batch & FIFO Alloc', type: 'page', route: 'multi-cheques' },
+      { id: 'it-bank-recon', titleAr: 'كشوف الحسابات البنكية والمطابقة الآلية', titleEn: 'Bank Statements & Auto-Reconcile', type: 'page', route: 'banking-reconciliation' },
+      { id: 'it-guarantees', titleAr: 'خطابات الضمان البنكية وتنبيهات الاستحقاق', titleEn: 'Letters of Guarantee (LGs)', type: 'page', route: 'banking-reconciliation' },
+    ],
+  },
+  {
+    id: 'f-telematics-iot',
+    titleAr: 'أنظمة التتبع والرسائل والتكاملات',
+    titleEn: 'i-Track GPS, Messaging & Subsystems',
+    items: [
+      { id: 'it-itrack', titleAr: 'مطابقة ساعات عمل محرك GPS مع يوميات التشغيل', titleEn: 'i-Track GPS Hours vs Usage Log', type: 'page', route: 'itrack-gps' },
+      { id: 'it-messaging', titleAr: 'محرك الرسائل الموحد WhatsApp وSMS', titleEn: 'Unified Messaging Gateway', type: 'page', route: 'unified-messaging' },
+      { id: 'it-integrations', titleAr: 'لوحة مراقبة صحة التكاملات الستة الخارجية', titleEn: 'External Integrations Health Check', type: 'page', route: 'integration-status' },
+    ],
+  },
+  {
+    id: 'f-portals-cms',
+    titleAr: 'صفحة الهبوط C-Style والبوابات الرقمية',
+    titleEn: 'Public Landing CMS & Portals',
+    items: [
+      { id: 'it-landing-view', titleAr: 'عرض صفحة الهبوط العامة بالمؤثرات والقصة', titleEn: 'Public Glass Landing Page Preview', type: 'page', route: 'landing-preview' },
+      { id: 'it-landing-cms', titleAr: 'لوحة إدارة محتوى صفحة الهبوط والبطاقات الزجاجية', titleEn: 'Landing Page CMS & Story Scenes', type: 'page', route: 'landing-cms' },
+      { id: 'it-cust-portal', titleAr: 'بوابة العميل الرقمية وتوقيع يوميات الرفع', titleEn: 'Customer Portal & Digital Signatures', type: 'page', route: 'customer-portal' },
     ],
   },
   {
@@ -1093,6 +1135,7 @@ export const INITIAL_FOLDERS: WorkspaceFolder[] = [
     titleAr: 'الإدارة والأمان والنسخ الاحتياطي',
     titleEn: 'Security & System Administration',
     items: [
+      { id: 'it-audit', titleAr: 'سجل التدقيق والحوكمة والامتثال (Audit Trail)', titleEn: 'Audit Trail & Compliance', type: 'page', route: 'audit-trail' },
       { id: 'it-usr', titleAr: 'بيانات وصلاحيات المستخدمين', titleEn: 'User Management', type: 'page', route: 'users' },
       { id: 'it-bk', titleAr: 'النسخ الاحتياطي واستعادة البيانات', titleEn: 'Backup & Restore', type: 'page', route: 'backup' },
       { id: 'it-pm', titleAr: 'مدير الصلاحيات (Role Permissions)', titleEn: 'Permission Manager', type: 'page', route: 'permissions' },

@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Bell,
   Menu,
+  Globe,
 } from 'lucide-react';
 import { useERP } from '../../context/ERPContext';
 import { gregorianToHijri, formatDateISO } from '../../utils/hijri';
@@ -83,6 +84,32 @@ export const TopHeader: React.FC = () => {
       crumbs.push({ title: 'الموازنات التقديرية وتنبيهات الحظر', action: () => setActiveView('budget-management') });
     } else if (activeView === 'permissions') {
       crumbs.push({ title: 'مدير الصلاحيات (RBAC)', action: () => setActiveView('permissions') });
+    } else if (activeView === 'fleet-maintenance') {
+      crumbs.push({ title: 'متابعة صيانة الأسطول', action: () => setActiveView('fleet-maintenance') });
+    } else if (activeView === 'multi-cheques') {
+      crumbs.push({ title: 'إدارة الشيكات المجمعة والـ FIFO', action: () => setActiveView('multi-cheques') });
+    } else if (activeView === 'banking-reconciliation') {
+      crumbs.push({ title: 'البنوك وخطابات الضمان والمطابقة الآلية', action: () => setActiveView('banking-reconciliation') });
+    } else if (activeView === 'biometric-attendance') {
+      crumbs.push({ title: 'حضور بصمة ADMS Push ولقطات ATTPHOTO', action: () => setActiveView('biometric-attendance') });
+    } else if (activeView === 'payroll-calculation') {
+      crumbs.push({ title: 'مسير الرواتب ومراكز تكلفة الأوناش', action: () => setActiveView('payroll-calculation') });
+    } else if (activeView === 'unified-messaging') {
+      crumbs.push({ title: 'محرك الرسائل الموحد WhatsApp / SMS', action: () => setActiveView('unified-messaging') });
+    } else if (activeView === 'itrack-gps') {
+      crumbs.push({ title: 'تكامل i-Track GPS ومطابقة ساعات المحرك', action: () => setActiveView('itrack-gps') });
+    } else if (activeView === 'integration-status') {
+      crumbs.push({ title: 'لوحة حالة ومراقبة التكاملات الخارجية', action: () => setActiveView('integration-status') });
+    } else if (activeView === 'audit-trail') {
+      crumbs.push({ title: 'سجل التدقيق والحوكمة والامتثال (Audit Trail)', action: () => setActiveView('audit-trail') });
+    } else if (activeView === 'landing-cms') {
+      crumbs.push({ title: 'إدارة محتوى صفحة الهبوط (Landing CMS)', action: () => setActiveView('landing-cms') });
+    } else if (activeView === 'landing-preview') {
+      crumbs.push({ title: 'صفحة الهبوط العامة C-Style', action: () => setActiveView('landing-preview') });
+    } else if (activeView === 'customer-portal') {
+      crumbs.push({ title: 'بوابة العميل الرقمية', action: () => setActiveView('customer-portal') });
+    } else if (activeView === 'employee-portal') {
+      crumbs.push({ title: 'بوابة الموظف الذاتية', action: () => setActiveView('employee-portal') });
     } else if (activeView === 'login-settings') {
       crumbs.push({ title: 'إعدادات صفحة الدخول', action: () => setActiveView('login-settings') });
     } else if (activeView === 'login-preview') {
@@ -165,6 +192,26 @@ export const TopHeader: React.FC = () => {
             <span className="sm:hidden font-mono">{pendingApprovalsCount}</span>
           </button>
         )}
+
+        {/* Quick Public Landing Page Button */}
+        <button
+          onClick={() => setActiveView('landing-preview')}
+          className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-900 transition-colors shadow-2xs shrink-0 cursor-pointer"
+          title="عرض صفحة الهبوط العامة بالمؤثرات والقصة والمشروعات"
+        >
+          <Globe className="w-3.5 h-3.5 text-red-700 animate-spin" style={{ animationDuration: '15s' }} />
+          <span className="hidden sm:inline">صفحة الهبوط</span>
+        </button>
+
+        {/* Quick Integration Health Button */}
+        <button
+          onClick={() => setActiveView('integration-status')}
+          className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors shadow-2xs shrink-0 cursor-pointer"
+          title="مراقبة وحالة التكاملات الستة (i-Track, ADMS, Meta WhatsApp, WPS, etc.)"
+        >
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <span>التكاملات (6)</span>
+        </button>
 
         {/* Quick C-Style Theme Button */}
         <button

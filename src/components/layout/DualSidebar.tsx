@@ -230,6 +230,36 @@ export const DualSidebar: React.FC = () => {
     if (route === 'financial-statements' || route === 'ledger') {
       return { tag: 'REP', label: 'تقرير', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
     }
+    if (route === 'multi-cheques') {
+      return { tag: 'CHQ', label: 'شيكات', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+    }
+    if (route === 'banking-reconciliation') {
+      return { tag: 'BNK', label: 'بنوك', bg: 'bg-teal-100 text-teal-800 border-teal-300' };
+    }
+    if (route === 'biometric-attendance') {
+      return { tag: 'BIO', label: 'بصمة', bg: 'bg-cyan-100 text-cyan-800 border-cyan-300' };
+    }
+    if (route === 'payroll-calculation') {
+      return { tag: 'PAY', label: 'رواتب', bg: 'bg-purple-100 text-purple-800 border-purple-300' };
+    }
+    if (route === 'itrack-gps') {
+      return { tag: 'GPS', label: 'تتبع', bg: 'bg-amber-100 text-amber-800 border-amber-300' };
+    }
+    if (route === 'unified-messaging') {
+      return { tag: 'MSG', label: 'رسائل', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+    }
+    if (route === 'integration-status') {
+      return { tag: 'INT', label: 'تكامل', bg: 'bg-slate-100 text-slate-800 border-slate-300' };
+    }
+    if (route === 'audit-trail') {
+      return { tag: 'AUD', label: 'تدقيق', bg: 'bg-red-100 text-red-800 border-red-300' };
+    }
+    if (route === 'landing-cms' || route === 'landing-preview') {
+      return { tag: 'CMS', label: 'موقع', bg: 'bg-blue-100 text-blue-800 border-blue-300' };
+    }
+    if (route === 'customer-portal' || route === 'employee-portal') {
+      return { tag: 'PRT', label: 'بوابة', bg: 'bg-indigo-100 text-indigo-800 border-indigo-300' };
+    }
     if (route === 'equipment-costing' || route === 'cost-centers') {
       return { tag: 'CST', label: 'تكاليف', bg: 'bg-amber-100 text-amber-800 border-amber-300' };
     }

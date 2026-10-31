@@ -30,6 +30,20 @@ import { BudgetManagementView } from './components/accounting/BudgetManagementVi
 import { DailyOperationsView } from './components/operations/DailyOperationsView';
 import { FleetMaintenanceView } from './components/maintenance/FleetMaintenanceView';
 
+// Unified Master Modules (Parts A, B, C)
+import { LandingPage } from './components/landing/LandingPage';
+import { LandingCMSView } from './components/cms/LandingCMSView';
+import { CustomerPortalView } from './components/portal/CustomerPortalView';
+import { EmployeePortalView } from './components/portal/EmployeePortalView';
+import { MultiChequeManagementView } from './components/cheques/MultiChequeManagementView';
+import { BankingReconciliationView } from './components/banking/BankingReconciliationView';
+import { BiometricAttendanceView } from './components/biometrics/BiometricAttendanceView';
+import { PayrollCalculationView } from './components/payroll/PayrollCalculationView';
+import { UnifiedMessagingView } from './components/messaging/UnifiedMessagingView';
+import { ITrackGpsView } from './components/gps/ITrackGpsView';
+import { IntegrationStatusView } from './components/status/IntegrationStatusView';
+import { AuditTrailView } from './components/audit/AuditTrailView';
+
 const MainLayout: React.FC = () => {
   const {
     activeView,
@@ -42,6 +56,10 @@ const MainLayout: React.FC = () => {
 
   if (activeView === 'login-preview') {
     return <LoginPage />;
+  }
+
+  if (activeView === 'landing' || activeView === 'landing-preview') {
+    return <LandingPage />;
   }
 
   return (
@@ -93,6 +111,19 @@ const MainLayout: React.FC = () => {
           {activeView === 'budget-management' && <BudgetManagementView />}
           {activeView === 'permissions' && <PermissionManager />}
           {activeView === 'login-settings' && <LoginPageSettings />}
+
+          {/* New Unified Master Views */}
+          {activeView === 'landing-cms' && <LandingCMSView />}
+          {activeView === 'customer-portal' && <CustomerPortalView />}
+          {activeView === 'employee-portal' && <EmployeePortalView />}
+          {activeView === 'multi-cheques' && <MultiChequeManagementView />}
+          {activeView === 'banking-reconciliation' && <BankingReconciliationView />}
+          {activeView === 'biometric-attendance' && <BiometricAttendanceView />}
+          {activeView === 'payroll-calculation' && <PayrollCalculationView />}
+          {activeView === 'unified-messaging' && <UnifiedMessagingView />}
+          {activeView === 'itrack-gps' && <ITrackGpsView />}
+          {activeView === 'integration-status' && <IntegrationStatusView />}
+          {activeView === 'audit-trail' && <AuditTrailView />}
         </main>
       </div>
 

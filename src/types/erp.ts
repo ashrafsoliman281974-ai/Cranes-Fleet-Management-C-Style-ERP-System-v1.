@@ -106,7 +106,16 @@ export interface JournalEntry {
   entryNo: string;
   postingDate: string;
   hijriPostingDate?: string;
-  entryType: 'قيد يومية عام' | 'قيد افتتاحي' | 'قيد تسوية' | 'قيد بنكي / تحويل';
+  entryType:
+    | 'قيد يومية عام'
+    | 'قيد افتتاحي'
+    | 'قيد تسوية'
+    | 'قيد بنكي / تحويل'
+    | 'سند قبض شيكات مجمعة'
+    | 'سند صرف شيكات موردين'
+    | 'إيداع شيك تحت التحصيل'
+    | 'تحصيل شيك بنكي'
+    | 'قيد عكسي لارتداد شيك بنكي';
   currency: 'EGP' | 'SAR' | 'USD';
   lines: JournalEntryLine[];
   totalDebit: number;
@@ -814,5 +823,515 @@ export interface BudgetOverrideRequest {
   approvalRemarks?: string;
 }
 
+// ==================== PART A: LANDING CMS & STORY MODE TYPES ====================
+export interface LandingSettings {
+  fleetCount: string; // "+100 ونش"
+  projectCount: string; // "+250 مشروع"
+  maxCapacityTon: string; // "+800 طن"
+  experienceYears: string; // "+35 سنة"
+  headlineAr: string; // "قوة ترفع مشروعك"
+  headlineEn: string; // "BUILT FOR BIGGER DREAMS"
+  subheadlineAr: string;
+  subheadlineEn: string;
+  heroVideoUrl: string;
+  erpLoginButtonTextAr: string; // "دخول إلى النظام"
+  erpLoginButtonTextEn: string; // "Login to ERP"
+  showLoginButton: boolean;
+  contactPhone: string;
+  whatsappPhone: string;
+  contactEmail: string;
+  addressAr: string;
+}
 
+export interface GlassCardItem {
+  id: string;
+  cardNo: string; // "01", "02", etc.
+  titleAr: string;
+  titleEn: string;
+  descriptionAr: string;
+  descriptionEn: string;
+  iconName: string;
+  mediaUrl: string;
+  tagAr: string;
+  tagEn: string;
+  order: number;
+}
+
+export interface StorySceneItem {
+  id: string;
+  sceneNumber: number; // 1 to 20
+  titleAr: string;
+  titleEn: string;
+  captionAr: string;
+  captionEn: string;
+  mediaUrl: string;
+  cameraMotion: string;
+  badgeAr?: string;
+  durationSeconds: number; // 6 seconds
+}
+
+export interface MediaAssetItem {
+  id: string;
+  filename: string;
+  titleAr: string;
+  altTextAr: string;
+  category: 'خلفيات وبانرات' | 'أسطول الأوناش' | 'مشاريع قومية' | 'شهادات وسلامة' | 'فيديوهات سينمائية';
+  url: string;
+  fileSizeKb: number;
+  resolution: string;
+  licenseType: 'ملكية الشركة (أصل)' | 'مرخص تجارياً' | 'تصوير ميداني معتمد';
+  qaPassed: boolean;
+  status: 'معتمد' | 'مسودة';
+}
+
+export interface LeadBookingRequest {
+  id: string;
+  leadNo: string;
+  clientName: string;
+  companyName: string;
+  phone: string;
+  email: string;
+  selectedCraneModel: string;
+  projectLocation: string;
+  startDate: string;
+  durationDays: number;
+  maxLoadTon: number;
+  maxHeightMeters: number;
+  notes?: string;
+  source: 'نموذج الموقع' | 'واتساب' | 'اتصال هاتفي';
+  status: 'طلب جديد' | 'تم التواصل' | 'تم إرسال عرض سعر' | 'مرفوض';
+  createdAt: string;
+  whatsappConsentGiven: boolean;
+}
+
+// ==================== PART B: MULTI-CHEQUE MANAGEMENT TYPES ====================
+export type ChequeLifecycleState =
+  | 'Received' // استلام
+  | 'Under Collection' // تحت التحصيل بالبنك
+  | 'Collected' // تم التحصيل
+  | 'Returned' // مرتد
+  | 'Paid' // مدفوع (شيكات صادرة)
+  | 'Issued' // صادر لمورد
+  | 'Cancelled'; // ملغى
+
+export interface ChequeSettings {
+  id: string;
+  company: string;
+  chequesInHandAccount: string;
+  chequesUnderCollectionAccount: string;
+  chequesPayableAccount: string;
+  bankChargesAccount: string;
+  penaltyRevenueAccount: string;
+  defaultAllocationRule: 'FIFO' | 'Manual';
+  debtReductionTiming: 'عند الاستلام' | 'عند التحصيل';
+  warningDays: number[]; // [7, 3, 1]
+  allowPartialCollection: boolean;
+  allowEndorsement: boolean;
+  numberingSeries: string;
+}
+
+export interface ChequeStatusLog {
+  id: string;
+  chequeId: string;
+  fromStatus: ChequeLifecycleState;
+  toStatus: ChequeLifecycleState;
+  user: string;
+  timestamp: string;
+  reason: string;
+  linkedJournalEntryNo?: string;
+}
+
+export interface ChequeBatchItem {
+  id: string;
+  chequeNo: string;
+  partyType: 'عميل' | 'مورد';
+  partyNameAr: string;
+  partyId?: string;
+  drawerName?: string;
+  drawerBankAr: string;
+  branchName?: string;
+  accountLast4: string;
+  amount: number;
+  currency: 'EGP' | 'USD' | 'EUR';
+  issueDate: string;
+  dueDate: string;
+  hijriDueDate?: string;
+  status: ChequeLifecycleState;
+  chequeScanUrl?: string;
+  notes?: string;
+  depositDate?: string;
+  collectionDate?: string;
+  bounceDate?: string;
+  bounceReason?: string;
+  bankCharges?: number;
+  penaltyAmount?: number;
+  replacementChequeNo?: string;
+  endorsedToSupplierAr?: string;
+  linkedPaymentEntryNo?: string;
+  linkedJournalEntryNo?: string;
+  statusLogs?: ChequeStatusLog[];
+}
+
+export interface ChequeBatchAllocation {
+  id: string;
+  chequeItemId: string;
+  referenceType: 'Sales Invoice' | 'Purchase Invoice' | 'دفعة مقدمة';
+  invoiceId: string;
+  invoiceNo: string;
+  invoiceDate: string;
+  invoiceDueDate?: string;
+  invoiceOutstanding: number;
+  allocatedAmount: number;
+}
+
+export interface ChequeBatch {
+  id: string;
+  batchNo: string;
+  direction: 'استلام من عملاء (Receive)' | 'سداد لموردين (Pay)';
+  company: string;
+  postingDate: string;
+  hijriPostingDate?: string;
+  companyBankAccount: string;
+  bankAccountNameAr: string;
+  paymentMethod: string;
+  costCenterAr?: string;
+  projectAr?: string;
+  cheques: ChequeBatchItem[];
+  allocations: ChequeBatchAllocation[];
+  totalChequesAmount: number;
+  totalAllocatedAmount: number;
+  unallocatedAdvanceAmount: number;
+  status: 'مسودة' | 'معتمدة ومرحلة' | 'ملغاة';
+  remarksAr: string;
+  linkedJournalEntryNo?: string;
+}
+
+export interface ChequeBook {
+  id: string;
+  bankAccount: string;
+  bankNameAr: string;
+  fromNo: string;
+  toNo: string;
+  currentLeaf: string;
+  totalLeaves: number;
+  remainingLeaves: number;
+  status: 'نشط' | 'قارب على النفاد' | 'منتهي';
+  notes?: string;
+}
+
+export interface WhatsAppTemplate {
+  id: string;
+  name: string;
+  titleAr: string;
+  language: 'ar' | 'en';
+  category: 'Utility' | 'Marketing' | 'Authentication';
+  headerText?: string;
+  bodyText: string;
+  footerText?: string;
+  buttons?: { type: 'QUICK_REPLY' | 'URL' | 'PHONE_NUMBER'; text: string; value?: string }[];
+  variables: string[];
+  approvalStatus: 'مسودة' | 'قيد المراجعة' | 'معتمد' | 'مرفوض';
+}
+
+export interface WhatsAppConversationMessage {
+  id: string;
+  direction: 'وارد (Inbound)' | 'صادر (Outbound)';
+  sender: string;
+  recipient: string;
+  text: string;
+  timestamp: string;
+  status: 'في الانتظار' | 'أُرسلت' | 'سُلِّمت' | 'قُرئت' | 'فشلت';
+  isTemplate: boolean;
+  relatedDocType?: string;
+  relatedDocNo?: string;
+  signedPortalLink?: string;
+}
+
+
+// ==================== PART C: BANKS & RECONCILIATION TYPES ====================
+export interface BankAccountItem {
+  id: string;
+  bankNameAr: string;
+  bankNameEn: string;
+  accountNumber: string;
+  iban: string;
+  currency: 'EGP' | 'USD' | 'EUR';
+  glAccountCode: string;
+  costCenterAr: string;
+  currentBalance: number;
+  status: 'نشط' | 'مجمد';
+}
+
+export interface BankStatementTransaction {
+  id: string;
+  date: string;
+  referenceNo: string;
+  descriptionAr: string;
+  debit: number;
+  credit: number;
+  balanceAfter: number;
+  matchedStatus: 'مطابق آلياً' | 'مطابق يدوياً' | 'غير مطابق';
+  matchedDocType?: string;
+  matchedDocNo?: string;
+}
+
+export interface LetterOfGuarantee {
+  id: string;
+  lgNumber: string;
+  type: 'ضمان ابتدائي (Bid Bond)' | 'ضمان نهائي (Performance Bond)' | 'ضمان دفعة مقدمة (Advance Payment Bond)';
+  issuingBankAr: string;
+  beneficiaryAr: string;
+  projectAr: string;
+  amount: number;
+  currency: 'EGP' | 'USD';
+  cashMarginPercent: number;
+  cashMarginAmount: number;
+  issueDate: string;
+  expiryDate: string;
+  daysToExpiry: number;
+  status: 'سارٍ' | 'قرب الانتهاء (تنبيه)' | 'مفرج عنه' | 'مصادر';
+}
+
+// ==================== PART C: BIOMETRIC ATTENDANCE (PUSH/ADMS) TYPES ====================
+export interface BiometricDevice {
+  id: string;
+  deviceNameAr: string;
+  model: string; // e.g. ZKTeco uFace 800 Plus (ADMS)
+  serialNumber: string;
+  protocol: 'ADMS/iClock (Push)' | 'Standalone Push';
+  locationAr: string;
+  assignedCostCenterAr: string;
+  assignedProjectAr: string;
+  ipAddress: string;
+  cloudServerUrl: string;
+  commKey: string;
+  isOnline: boolean;
+  lastHeartbeat: string;
+  totalPunchesToday: number;
+  supportsFaceAndPhoto: boolean;
+}
+
+export interface BiometricPunch {
+  id: string;
+  deviceId: string;
+  deviceNameAr: string;
+  userPin: string;
+  employeeNameAr: string;
+  timestamp: string;
+  direction: 'دخول (Check-In)' | 'خروج (Check-Out)';
+  verifyType: 'بصمة وجه + صورة' | 'بصمة إصبع' | 'بطاقة RFID';
+  photoUrl?: string; // ATTPHOTO snapshot
+  costCenterAr: string;
+  projectAr: string;
+  status: 'معتمد' | 'استثناء يحتاج مراجعة';
+}
+
+export interface AttendanceExceptionItem {
+  id: string;
+  date: string;
+  employeeNameAr: string;
+  userPin: string;
+  exceptionType: 'بصمة خروج مفقودة' | 'تأخير صباحي' | 'انصراف مبكر' | 'موظف غير معرف (Unmapped PIN)';
+  detailsAr: string;
+  status: 'بانتظار المعالجة' | 'تم التصحيح والاعتماد' | 'مرفوض';
+  resolvedByAr?: string;
+}
+
+// ==================== PART C: PAYROLL TYPES ====================
+export interface EmployeePayrollItem {
+  id: string;
+  employeeId: string;
+  employeeNameAr: string;
+  departmentAr: string;
+  roleAr: string;
+  basicSalary: number;
+  attendanceDays: number;
+  overtimeHours: number;
+  overtimeAmount: number;
+  siteHardshipAllowance: number;
+  hazardAllowance: number;
+  grossSalary: number;
+  socialInsuranceDeduction: number; // 11%
+  incomeTaxDeduction: number;
+  advancesDeduction: number;
+  penaltiesDeduction: number;
+  netSalary: number;
+  costCenterAllocation: {
+    costCenterAr: string;
+    projectAr: string;
+    allocatedAmount: number;
+  }[];
+  bankAccountNo: string;
+  status: 'معتمد' | 'مدفوع';
+}
+
+export interface PayrollRun {
+  id: string;
+  runNo: string;
+  month: string; // "2026-10"
+  monthNameAr: string;
+  totalBasic: number;
+  totalAllowances: number;
+  totalOvertime: number;
+  totalGross: number;
+  totalDeductions: number;
+  totalNetPayroll: number;
+  employeesCount: number;
+  status: 'مسودة' | 'بانتظار اعتماد المدير العام' | 'معتمد ومحول للبنك';
+  wpsFileGenerated: boolean;
+  employees: EmployeePayrollItem[];
+}
+
+// ==================== PART C: UNIFIED MESSAGING ENGINE TYPES ====================
+export type MessageChannel = 'WhatsApp' | 'SMS' | 'Email';
+
+export interface UnifiedMessageRule {
+  id: string;
+  ruleNameAr: string;
+  triggerEvent:
+    | 'إنشاء طلب حجز Lead جديد'
+    | 'اعتماد عرض سعر'
+    | 'اعتماد عقد تأجير'
+    | 'إصدار فاتورة مبيعات'
+    | 'سجل تشغيل ينتظر اعتماد العميل'
+    | 'اقتراب استحقاق شيك'
+    | 'ارتداد شيك'
+    | 'قرب انتهاء شهادة مشغل أو ترخيص ونش'
+    | 'تنبيه انقطاع جهاز بصمة'
+    | 'تجاوز سرعة GPS';
+  channelPriority: MessageChannel[];
+  targetRecipientType: 'العميل' | 'المشغل/الموظف' | 'فريق المبيعات' | 'مسؤول السلامة' | 'المدير المالي';
+  templateId: string;
+  isActive: boolean;
+  relatedDocType?: string;
+}
+
+export interface UnifiedMessageLog {
+  id: string;
+  timestamp: string;
+  channel: MessageChannel;
+  recipientNameAr: string;
+  recipientPhone: string;
+  messageContent: string;
+  relatedDocType: string;
+  relatedDocNo: string;
+  status: 'تم التسليم بنجاح' | 'في الانتظار' | 'فشل الإرسال (تم التحويل لـ SMS)';
+  failureReason?: string;
+}
+
+export interface WhatsAppConsent {
+  id: string;
+  phone: string;
+  clientNameAr: string;
+  status: 'موافق' | 'ملغى';
+  source: 'نموذج حجز الموقع' | 'عقد تأجير' | 'يدوي';
+  updatedAt: string;
+}
+
+// ==================== PART C: I-TRACK GPS INTEGRATION TYPES ====================
+export interface ITrackTracker {
+  id: string;
+  imeiOrTrackerId: string;
+  deviceName: string;
+  assignedCraneCode: string;
+  assignedCraneModel: string;
+  effectiveCostCenterAr: string;
+  effectiveProjectAr: string;
+  lastGpsPing: string;
+  lastCoordinates: string; // "30.0444, 31.2357"
+  engineStatus: 'دوران وعمل' | 'توقف تام' | 'خمول';
+  todayDistanceKm: number;
+  todayEngineHours: number;
+}
+
+export interface ITrackReportLine {
+  id: string;
+  trackerId: string;
+  date: string;
+  craneModel: string;
+  distanceKm: number;
+  engineWorkingHours: number;
+  idleHours: number;
+  fuelEstimatedLiters: number;
+  maxSpeedKmh: number;
+  speedViolationsCount: number;
+  assignedCostCenterAr: string;
+  assignedProjectAr: string;
+}
+
+export interface GpsUsageLogComparison {
+  id: string;
+  date: string;
+  craneModel: string;
+  craneCode: string;
+  projectAr: string;
+  usageLogHours: number; // الساعات المعتمدة بسجل التشغيل
+  gpsEngineHours: number; // ساعات تشغيل المحرك من GPS
+  varianceHours: number;
+  variancePercentage: number;
+  complianceStatus: 'متطابق (ضمن الحد المسموح)' | 'فارق يحتاج مراجعة التشغيل';
+}
+
+// ==================== PART C: INTEGRATION HEALTH STATUS ====================
+export interface IntegrationHealthItem {
+  id: string;
+  serviceNameAr: string;
+  serviceCategory: 'أجهزة البصمة (Push)' | 'تتبع GPS (i-Track)' | 'محرك واتساب' | 'بوابة SMS' | 'المطابقة البنكية' | 'النسخ الاحتياطي';
+  status: 'يعمل بكفاءة' | 'تحذير' | 'متوقف';
+  lastActivity: string;
+  successRate: number;
+  detailsAr: string;
+}
+
+// ==================== AUDIT TRAIL & COMPLIANCE TRACKING TYPES ====================
+export interface FieldChangeDiff {
+  fieldNameAr: string;
+  fieldNameEn: string;
+  oldValue: string | number | boolean;
+  newValue: string | number | boolean;
+}
+
+export type AuditActionType =
+  | 'إنشاء'
+  | 'تعديل'
+  | 'اعتماد'
+  | 'إلغاء'
+  | 'حذف'
+  | 'تسجيل دخول'
+  | 'تصدير بيانات'
+  | 'تجاوز موازنة'
+  | 'طباعة'
+  | 'تغيير صلاحية';
+
+export type AuditSeverity = 'عادي (Info)' | 'تنبيه (Warning)' | 'حرج (Critical)' | 'أمني (Security)';
+
+export type ComplianceCategory =
+  | 'حوكمة مالية (SOX / IFRS)'
+  | 'سلامة وتشغيل (HSE / ISO 45001)'
+  | 'أمان وسريّة البيانات'
+  | 'إجراءات قانونية وعقود'
+  | 'تأمينات وضرائب (Egyptian Tax & Social Insurance)';
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string; // "2026-10-31 14:35:22"
+  hijriDate: string; // "19 ربيع الآخر 1448 هـ"
+  userId: string;
+  userNameAr: string;
+  userRoleAr: string;
+  userIpAddress: string;
+  userDevice: string;
+  actionType: AuditActionType;
+  moduleNameAr: string;
+  docType: string;
+  docId: string;
+  docNumber: string;
+  summaryAr: string;
+  severity: AuditSeverity;
+  complianceCategory: ComplianceCategory;
+  status: 'نجاح' | 'فشل أو محظور';
+  checksumSha256?: string;
+  fieldChanges?: FieldChangeDiff[];
+  metadata?: Record<string, string | number | boolean>;
+}
 
