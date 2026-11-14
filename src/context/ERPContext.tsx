@@ -439,7 +439,10 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('cranes_wa_templates');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: WhatsAppTemplate[] = JSON.parse(saved);
+        const existingIds = new Set(parsed.map((t) => t.id));
+        const missing = INITIAL_WHATSAPP_TEMPLATES.filter((t) => !existingIds.has(t.id));
+        return [...parsed, ...missing];
       } catch {}
     }
     return INITIAL_WHATSAPP_TEMPLATES;
@@ -2669,6 +2672,30 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem('cstyle_mechanics', JSON.stringify(updated));
         return updated;
       });
+    }
+
+    if (completeEvent.status === 'مجدولة قادمة' || completeEvent.status === 'متأخرة / تنبيه حرج') {
+      eventDispatcher.publish(
+        'maintenance.due',
+        'Fleet Maintenance Tracking',
+        'MaintenanceLog',
+        completeEvent.id,
+        completeEvent.eventNo,
+        {
+          craneCode: completeEvent.craneCode,
+          craneModel: completeEvent.craneModel,
+          eventType: completeEvent.eventType,
+          nextDueDate: completeEvent.nextDueDate,
+          nextDueHourMeter: completeEvent.nextDueHourMeter,
+          workshopLocation: completeEvent.workshopLocation,
+          serviceUrl: `https://egyptcranes.com/fleet/maintenance/${completeEvent.eventNo}`,
+        },
+        {
+          partyNameAr: completeEvent.leadMechanicNameAr || 'مسؤول الصيانة',
+          partyPhone: completeEvent.leadMechanicPhone || '+201008181125',
+          dueDate: completeEvent.nextDueDate,
+        }
+      );
     }
 
     showToast(isNew ? `تم جدولة مهمة الصيانة الجديدة: ${eventNo}` : `تم تحديث أمر الصيانة: ${eventNo}`);

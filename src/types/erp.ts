@@ -1185,10 +1185,25 @@ export interface PayrollRun {
 // ==================== PART C: UNIFIED MESSAGING ENGINE TYPES ====================
 export type MessageChannel = 'WhatsApp' | 'SMS' | 'Email';
 
+export type RuleTriggerFrequency = 'Immediately' | 'Daily' | 'X days before';
+
 export interface UnifiedMessageRule {
   id: string;
   ruleNameAr: string;
+  triggerKey?:
+    | 'ServiceDueSoon'
+    | 'LeadCreated'
+    | 'QuotationApproved'
+    | 'ContractApproved'
+    | 'InvoiceSubmitted'
+    | 'UsageLogPending'
+    | 'ChequeDueSoon'
+    | 'ChequeReturned'
+    | 'CertExpiring'
+    | 'DeviceOffline'
+    | 'GpsOverspeed';
   triggerEvent:
+    | 'ServiceDueSoon (اقتراب موعد خدمة دورية للونش)'
     | 'إنشاء طلب حجز Lead جديد'
     | 'اعتماد عرض سعر'
     | 'اعتماد عقد تأجير'
@@ -1200,10 +1215,35 @@ export interface UnifiedMessageRule {
     | 'تنبيه انقطاع جهاز بصمة'
     | 'تجاوز سرعة GPS';
   channelPriority: MessageChannel[];
-  targetRecipientType: 'العميل' | 'المشغل/الموظف' | 'فريق المبيعات' | 'مسؤول السلامة' | 'المدير المالي';
+  targetRecipientType:
+    | 'مسؤول الصيانة (MaintenanceManager)'
+    | 'العميل'
+    | 'المشغل/الموظف'
+    | 'فريق المبيعات'
+    | 'مسؤول السلامة'
+    | 'المدير المالي';
   templateId: string;
   isActive: boolean;
-  relatedDocType?: string;
+  relatedDocType?:
+    | 'MaintenanceLog'
+    | 'Lead'
+    | 'Quotation'
+    | 'Crane Contract'
+    | 'Sales Invoice'
+    | 'Usage Log'
+    | 'Cheque'
+    | 'Crane Inspection'
+    | 'Biometric Device'
+    | 'ITrack GPS'
+    | string;
+  frequency?: RuleTriggerFrequency;
+  daysBeforeTrigger?: number;
+  nextExecution?: string; // YYYY-MM-DD
+  nextExecutionTime?: string; // HH:mm
+  includeDirectServiceLink?: boolean;
+  serviceLinkBaseUrl?: string;
+  variableMappings?: Record<string, string>;
+  stopConditions?: string[];
 }
 
 export interface UnifiedMessageLog {
